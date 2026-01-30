@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vortex Search Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+        }
+
+        .search-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .num-results {
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            width: 150px;
+        }
+
+        .search-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .results-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .results-header h2 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .result-item {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-id {
+            font-size: 0.8rem;
+            color: #999;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-content {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 2s infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                content: '';
+            }
+
+            40% {
+                content: '.';
+            }
+
+            60% {
+                content: '..';
+            }
+
+            80%,
+            100% {
+                content: '...';
+            }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid #fcc;
+            margin: 1rem 0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .no-results h3 {
+            margin-bottom: 1rem;
+            color: #999;
+        }
+
+        #actionSelect {
+            background: linear-gradient(135deg, #edf0ff 0%, #f5f2ff 100%);
+            border: 2px solid #d5d5ff;
+            color: #333;
+            font-weight: 600;
+            border-radius: 12px;
+            height: 54px;
+            padding-left: 48px;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23667eea"...');
+            background-repeat: no-repeat;
+            background-position: 12px center;
+        }
+
+        #actionSelect:hover {
+            border-color: #8570ff;
+            box-shadow: 0 0 0 3px rgba(133, 112, 255, 0.25);
+        }
+
+
+        #runBtn {
+            background: linear-gradient(135deg, #6a78ff 0%, #9b57ff 100%);
+            padding: 1rem 3rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 20px rgba(110, 90, 255, 0.25);
+        }
+
+        #runBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(110, 90, 255, 0.35);
+        }
+
+        .search-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 2.5rem;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(4px);
+        }
+
+        .search-form {
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            align-items: center;
+        }
+
+        .search-input {
+            height: 54px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+        }
+
+        .num-results {
+            height: 54px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+        }
+
+        .search-buttons {
+            margin-top: .5rem;
+        }
+
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .search-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌀 Vortex</h1>
+            <p>Search Engine (Generated by Sonnet-4)</p>
+        </div>
+
+        <div class="search-container">
+            <form class="search-form" id="searchForm">
+                <div class="input-group">
+                    <input type="text" class="search-input" id="queryInput" placeholder="Enter your search query..."
+                        required>
+                    <input type="number" class="num-results" id="numResultsInput" placeholder="Results" min="1"
+                        max="100" value="10">
+                </div>
+                <div class="search-buttons">
+                    <select id="actionSelect" class="search-input" style="max-width: 300px;">
+                        <optgroup label="Assignment 1">
+                            <option value="search">🔍 Search</option>
+                            <option value="similar">✨ Search Similar</option>
+                        </optgroup>
+
+                        <optgroup label="Assignment 2">
+                            <option value="semantic">🧠 Improved Search</option>
+                            <option value="rag">🤖 Answer (RAG)</option>
+                            <option value="expand">🔎 Expanded Search</option>
+                        </optgroup>
+                    </select>
+
+                    <button type="button" class="btn btn-primary" id="runBtn">
+                        ▶ Run
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="results-header">
+                <h2>Search Results</h2>
+                <div class="results-count" id="resultsCount"></div>
+            </div>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api/v1';
+
+        const searchForm = document.getElementById('searchForm');
+        const queryInput = document.getElementById('queryInput');
+        const numResultsInput = document.getElementById('numResultsInput');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsContent = document.getElementById('resultsContent');
+
+
+        // Handle search form submission
+        const actionSelect = document.getElementById('actionSelect');
+        const runBtn = document.getElementById('runBtn');
+
+        runBtn.addEventListener('click', async () => {
+            const action = actionSelect.value;
+
+            if (action === 'search') {
+                await performSearch();
+            } else if (action === 'similar') {
+                const docId = parseInt(queryInput.value);
+                if (isNaN(docId)) {
+                    showError('Please enter a valid document ID for Similar Search');
+                    return;
+                }
+                await performSimilarSearch(docId);
+            } else if (action === 'semantic') {
+                await performSemanticSearch();
+            } else if (action === 'rag') {
+                await performAnswerQuery();
+            } else if (action === 'expand') {
+                await performExpandedSearch();
+            }
+        });
+
+        async function performSearch() {
+            const query = queryInput.value.trim();
+            const numResults = parseInt(numResultsInput.value) || 10;
+
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/search?query=${encodeURIComponent(query)}&num_results=${numResults}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data.results, `Search results for "${query}"`);
+            } catch (error) {
+                showError(`Search failed: ${error.message}`);
+            }
+        }
+
+        async function performSimilarSearch(docId) {
+            const numResults = parseInt(numResultsInput.value) || 10;
+
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/search_like?doc_id=${docId}&num_results=${numResults}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data.results, `Documents similar to ID ${docId}`);
+            } catch (error) {
+                showError(`Similarity search failed: ${error.message}`);
+            }
+        }
+
+
+        async function performSemanticSearch() {
+            const query = queryInput.value.trim();
+            const numResults = parseInt(numResultsInput.value) || 10;
+
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/search/semantic?query=${encodeURIComponent(query)}&num_results=${numResults}`
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data.results, `Semantic search results for "${query}"`);
+            } catch (error) {
+                showError(`Semantic search failed: ${error.message}`);
+            }
+        }
+
+        async function performAnswerQuery() {
+            const query = queryInput.value.trim();
+
+            if (!query) {
+                showError('Please enter a question to ask the RAG system');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/answer?query=${encodeURIComponent(query)}`
+                );
+
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        showError("Gemini API limit reached — no more RAG responses available today.");
+                        setButtonsEnabled(true);
+                        return;
+                    }
+
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                const html = `
+                    <div class="result-item">
+                        <div class="result-title">Answer</div>
+                        <div class="result-content">${escapeHtml(data.answer)}</div>
+                    </div>
+                    ${data.document
+                        ? `
+                        <div class="result-item">
+                            <div class="result-title">Source Document</div>
+                            <div class="result-id">ID: ${data.document.id}</div>
+                            <div class="result-id">Selected Segment: #${data.document.segment_id}</div>
+                            <div class="result-content">${escapeHtml(data.document.snippet)}</div>
+                        </div>`
+                        : ''
+                    }
+                `;
+
+                resultsContainer.style.display = 'block';
+                resultsContent.innerHTML = html;
+                resultsCount.textContent = "Answer generated using RAG";
+
+                setButtonsEnabled(true);
+
+            } catch (error) {
+                showError(`RAG failed: ${error.message}`);
+            }
+        }
+
+        async function performExpandedSearch() {
+            const query = queryInput.value.trim();
+            const numResults = parseInt(numResultsInput.value) || 10;
+
+            if (!query) {
+                showError("Please enter a search query");
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/search/expand?query=${encodeURIComponent(query)}&num_results=${numResults}`
+                );
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                const results = data.results;
+
+                resultsContainer.style.display = 'block';
+                resultsCount.textContent =
+                    `Expanded Search (expanded query → "${data.query_expanded}")`;
+
+                resultsContent.innerHTML = results.map(result => `
+            <div class="result-item">
+                <div class="result-title">${escapeHtml(result.title)}</div>
+                <div class="result-id">ID: ${result.id}</div>
+                <div class="result-content">${escapeHtml(result.snippet)}</div>
+            </div>
+        `).join('');
+
+                setButtonsEnabled(true);
+
+            } catch (error) {
+                showError(`Expanded search failed: ${error.message}`);
+            }
+        }
+
+
+        function showLoading() {
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = '<div class="loading">Searching</div>';
+            resultsCount.textContent = '';
+            setButtonsEnabled(false);
+        }
+
+        function displayResults(results, title) {
+            resultsContainer.style.display = 'block';
+            resultsCount.textContent = `Found ${results.length} results`;
+
+            if (results.length === 0) {
+                resultsContent.innerHTML = `
+                    <div class="no-results">
+                        <h3>No results found</h3>
+                        <p>Try adjusting your search terms or check your spelling.</p>
+                    </div>
+                `;
+            } else {
+                resultsContent.innerHTML = results.map(result => `
+                    <div class="result-item">
+                        <div class="result-title">${escapeHtml(result.title)}</div>
+                        <div class="result-id">ID: ${result.id}</div>
+                        <div class="result-content">${escapeHtml(result.snippet || result.content)}</div>
+                    </div>
+                `).join('');
+            }
+
+            setButtonsEnabled(true);
+        }
+
+        function showError(message) {
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+            resultsCount.textContent = '';
+            setButtonsEnabled(true);
+        }
+
+        function setButtonsEnabled(enabled) {
+            runBtn.disabled = !enabled;
+            actionSelect.disabled = !enabled;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Add some sample interactions on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Focus on the search input
+            queryInput.focus();
+
+            // Add placeholder suggestion
+            queryInput.placeholder = "Try searching for 'machine learning', 'python', or enter a document ID...";
+        });
+    </script>
+</body>
+
+</html>
